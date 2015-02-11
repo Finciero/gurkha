@@ -1,0 +1,24 @@
+{
+  "name": "Gurkha",
+  "version": "1.0.0",
+  "description": "Data extraction module",
+  "main": "Gurkha.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Finciero/Gurkha.git"
+  },
+  "keywords": [
+    "data",
+    "extraction",
+    "scraping"
+  ],
+  "author": "Jeremías Díaz Cordara <monitz87@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Finciero/Gurkha/issues"
+  },
+  "homepage": "https://github.com/Finciero/Gurkha"
+}
