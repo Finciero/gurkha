@@ -80,3 +80,8 @@ console.log(products[0].name);
 By default, Gurkha will always assign the text of a selected element to its corresponding object member. However, you can override this behavior by specifying a sanitizing function, as seen with the 'price' member of the object. Sanitizing functions always receive a cheerio object as a parameter and must return the sanitized value.
 
 Gurkha automatically detects whether the selection returns multiple elements and in that case, the value of that object member will be an array. The only exception to this is the top level selector, which will always return an array of objects (even if the selector only applies to a single element).
+
+
+## Contributing
+
+If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Any requests for features or bug fixes can be made by adding a new issue.
