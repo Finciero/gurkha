@@ -1,6 +1,6 @@
 {
   "name": "Gurkha",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Data extraction module",
   "main": "Gurkha.js",
   "scripts": {
@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/Finciero/Gurkha/issues"
   },
-  "homepage": "https://github.com/Finciero/Gurkha"
+  "homepage": "https://github.com/Finciero/Gurkha",
+  "dependencies": {
+    "cheerio": "^0.18.0"
+  }
 }
