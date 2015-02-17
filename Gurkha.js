@@ -1,7 +1,14 @@
 'use strict';
 var cheerio = require('cheerio');
 
-Gurkha.prototype._parse = function ($currentElement, sch) {
+function gurkha (schema) {
+  this._schema = schema;
+  if (typeof(schema) !== 'object') {
+    throw new Error('Illegal argument: constructor must receive a schema object');
+  }
+}
+
+gurkha.prototype._parse = function ($currentElement, sch) {
   var _this = this;
   var $ = _this.$;
   var rule = sch.$rule;
@@ -67,7 +74,8 @@ Gurkha.prototype._parse = function ($currentElement, sch) {
     return resultArray;
   }
 };
-Gurkha.prototype._flatten = function (val) {
+
+gurkha.prototype._flatten = function (val) {
   var array = [];
   var i;
   for (i = 0; i < val.length; i += 1) {
@@ -76,7 +84,7 @@ Gurkha.prototype._flatten = function (val) {
   return array;
 };
 
-Gurkha.prototype._flatten2 = function (val) {
+gurkha.prototype._flatten2 = function (val) {
   var array = [];
   if (val instanceof Array) {
     if (val.length === 1) {
@@ -104,16 +112,9 @@ Gurkha.prototype._flatten2 = function (val) {
     }
   }
 };
-Gurkha.prototype.parse = function (html) {
+gurkha.prototype.parse = function (html) {
   this.$ = cheerio.load(html);
   return this._flatten(this._parse(null, this._schema));
 };
 
-module.exports = Gurkha;
-
-function Gurkha (schema) {
-  this._schema = schema;
-  if (typeof(schema) !== 'object') {
-    throw new Error('Illegal argument: constructor must receive a schema object');
-  }
-}
+module.exports = gurkha;

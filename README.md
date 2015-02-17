@@ -1,9 +1,9 @@
-# Gurkha
+# gurkha
 Data extraction module for Yakuza
 
 ## Description
 
-Gurkha is a simple data extraction tool designed to standarize html parsing. While it was thought with web scraping in mind, it can be used as a standalone tool. Let's say you have the following html table:
+gurkha is a simple data extraction tool designed to standarize html parsing. While it was thought with web scraping in mind, it can be used as a standalone tool. Let's say you have the following html table:
 
 | Product | Code | Price |
 |---------|------|-------|
@@ -19,7 +19,7 @@ Let's also say you wish to generate an array of 'product objects' like so:
  {'name': 'Banana', 'code': '2003', 'price': '0.50'}]
 ```
 
-With Gurkha, you just have to specify the object structure you desire, and a set of rules to indicate where in the html you can find the desired data for each object member. You can also specify post-processing functions to sanitize the data after it is retrieved (for example, the price component of each object has to be stripped of the dollar signs). After that, you're just a function call away from your precious object array!
+With gurkha, you just have to specify the object structure you desire, and a set of rules to indicate where in the html you can find the desired data for each object member. You can also specify post-processing functions to sanitize the data after it is retrieved (for example, the price component of each object has to be stripped of the dollar signs). After that, you're just a function call away from your precious object array!
 
 ## Usage
 
@@ -58,7 +58,7 @@ Considering the previous example, this is what the table html would look like:
 
 
 ```javascript
-var Gurkha = require('Gurkha');
+var Gurkha = require('gurkha');
 var gk = new Gurkha({
   '$rule': 'table#fruit > tbody > tr',
   'name': 'td:nth-child(1)',
@@ -77,9 +77,9 @@ console.log(products[0].name);
 // 'Apple'
 ```
 
-By default, Gurkha will always assign the text of a selected element to its corresponding object member. However, you can override this behavior by specifying a sanitizing function, as seen with the 'price' member of the object. Sanitizing functions always receive a cheerio object as a parameter and must return the sanitized value.
+By default, gurkha will always assign the text of a selected element to its corresponding object member. However, you can override this behavior by specifying a sanitizing function, as seen with the 'price' member of the object. Sanitizing functions always receive a cheerio object as a parameter and must return the sanitized value.
 
-Gurkha automatically detects whether the selection returns multiple elements and in that case, the value of that object member will be an array. The only exception to this is the top level selector, which will always return an array of objects (even if the selector only applies to a single element).
+gurkha automatically detects whether the selection returns multiple elements and in that case, the value of that object member will be an array. The only exception to this is the top level selector, which will always return an array of objects (even if the selector only applies to a single element).
 
 
 ## Contributing
