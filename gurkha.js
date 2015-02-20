@@ -1,9 +1,12 @@
 'use strict';
 var cheerio = require('cheerio');
 
+// TODO: check to use each in every selection
+// TODO: fix parseArray
+
 function gurkha (schema) {
-  if (typeof(schema) !== 'object') {
-    throw new Error('Illegal argument: constructor must receive a schema object');
+  if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
+    throw new Error('Illegal argument: constructor must receive a schema object, string or array');
   }
 
   this._schema = schema;
@@ -14,16 +17,49 @@ gurkha.prototype._reserved = {
   '$rule': true,
   '$topLevel': true
 };
+
 // traverses the schema recursively in order to build the object
-gurkha.prototype._parse = function ($currentElement, sch) {
+gurkha.prototype._parse = function ($currentElement, sch, sanitizer) {
+  var _this = this;
+  if (sch instanceof Array) {
+    return _this._parseArray($currentElement, sch, sanitizer);
+  } else if (typeof(sch) === 'object') {
+    return _this._parseObject($currentElement, sch, sanitizer);
+  } else if (typeof(sch) === 'string') {
+    return _this._parseString($currentElement, sch, sanitizer);
+  } else {
+    throw new Error('Illegal argument: schema values must be object, string or array. Got ' + sch);
+  }
+};
+
+gurkha.prototype._parseArray = function ($currentElement, sch, sanitizer) {
+  var _this = this;
+  var $ = _this.$;
+  var resultArray = [];
+  var i;
+  if (!$currentElement) {
+    $currentElement = $('*');
+  }
+  for (i = 0; i < sch.length; i += 1) {
+    var value = sch[i];
+    resultArray.push(_this._parse($currentElement, value, sanitizer));
+  }
+
+  if (resultArray.length === 1) {
+      resultArray._ignore = true;
+  }
+
+  return resultArray;
+};
+
+gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
   var _this = this;
   var $ = _this.$;
   var rule = sch.$rule;
   var resultArray = [];
+  // options
+  var topLevel = sch.$topLevel;
   if (rule) {
-    // options
-    var topLevel = sch.$topLevel;
-
     if (typeof(rule) !== 'string') {
       throw new Error('Illegal type: Rules must be in String format');
     }
@@ -38,63 +74,80 @@ gurkha.prototype._parse = function ($currentElement, sch) {
 
     // build object for each element selected by the rule
     $currentElement.each(function (index, el) {
-      var value;
       var $el = $(el);
-      var result = {};
-      var keyCount = 0;
-      var sanitizer = sch.$fn;
-      if (sanitizer) {
-        if (typeof(sanitizer) !== 'function') {
-          throw new Error('Illegal type: Sanitizers must be in Function format');
-        }
-      }
-      for (var key in sch) {
-        // skip reserved keys
-        if (_this._reserved[key] || !key) {
-          continue;
-        } else {
-          keyCount += 1;
-          value = sch[key];
-
-          // single rule, object member named key should be a single value
-          if (typeof(value) === 'string') {
-            var $subElement = $el.find(value);
-            if (sanitizer) {
-              result[key] = sanitizer($subElement);
-            } else {
-              result[key] = $subElement.text();
-            }
-          // array, object member named key should be an array
-          } else if (value instanceof Array) {
-            var i;
-            var array = [];
-            for (i = 0; i < value.length; i += 1) {
-              array.push(_this._parse($el, value[i]));
-            }
-            // if the proposed array has only one element, we need to flag the flattener to ignore it
-            if (array.length === 1) {
-              array._ignore = true;
-            }
-            result[key] = array;
-          // object, object member named key should be an object
-          } else if (typeof(value) === 'object') {
-              result[key] = _this._parse($el, value);
-          }
-        }
-      }
-      // if the object has no members other than the reserved ones,
-      // return the result of the selection rather than an object
-      if (keyCount === 0) {
-        if (sanitizer) {
-          resultArray.push(sanitizer($el));
-        } else {
-          resultArray.push($el.text());
-        }
-      } else {
-        resultArray.push(result);
-      }
+      resultArray.push(_this._build($el, sch, sanitizer));
     });
-    return resultArray;
+  // no basic rule specified
+  } else {
+    if (!$currentElement || topLevel) {
+      $currentElement = $('*');
+    }
+    // if there is no rule we build only one object
+    resultArray.push(_this._build($currentElement, sch, sanitizer));
+  }
+
+  return resultArray;
+};
+
+gurkha.prototype._parseString = function ($currentElement, sch, sanitizer) {
+  var _this = this;
+  var $ = _this.$;
+  var resultArray = [];
+  var $subElement;
+  // a single string is a rule, so we select the elements that match it
+  if (!$currentElement) {
+    $subElement = $(sch);
+  } else {
+    $subElement = $currentElement.find(sch);
+  }
+
+  // push result for each element selected by the rule
+  $subElement.each(function (index, el) {
+    var $el = $(el);
+    if (!sanitizer) {
+      resultArray.push($el.text());
+    } else {
+      resultArray.push(sanitizer($el));
+    }
+  });
+
+  return resultArray;
+};
+
+// auxiliary function to build the object
+gurkha.prototype._build = function ($el, sch, sanitizer) {
+  var _this = this;
+  var value;
+  var result = {};
+  var keyCount = 0;
+  // override the previous sanitizer if a new one exists in the object
+  sanitizer = sch.$fn || sanitizer;
+  if (sanitizer) {
+    if (typeof(sanitizer) !== 'function') {
+      throw new Error('Illegal type: Sanitizers must be in Function format');
+    }
+  }
+  for (var key in sch) {
+    // skip reserved keys
+    if (_this._reserved[key] || !key) {
+      continue;
+    } else {
+      keyCount += 1;
+      value = sch[key];
+      // unreserved object members must ignore previous sanitizer functions
+      result[key] = _this._parse($el, value, sch.$fn);
+    }
+  }
+  // if the object has no members other than the reserved ones,
+  // return the result of the selection rather than an object
+  if (keyCount === 0) {
+    if (sanitizer) {
+      return sanitizer($el);
+    } else {
+      return $el.text();
+    }
+  } else {
+    return result;
   }
 };
 
@@ -111,16 +164,17 @@ gurkha.prototype._flatten = function (val) {
 // flatten any inner arrays with only one value
 gurkha.prototype._flatten2 = function (val) {
   var array = [];
+  // flatten recursively
   if (val instanceof Array) {
     // if the array is flagged to be ignored we don't flatten it
     if (val.length === 1 && !val._ignore) {
-      return val[0];
+      return this._flatten2(val[0]);
     } else {
+      var i;
       // if the array was flagged to be ignored, we clone it to get rid of the property without using delete
       if (val._ignore) {
-        val = [val[0]];
+        val = [this._flatten2(val[0])];
       }
-      var i;
       for (i = 0; i < val.length; i += 1) {
         array.push(this._flatten2(val[i]));
       }
