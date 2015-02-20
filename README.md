@@ -153,7 +153,7 @@ Let's say you now just want your fruit data in array format, like so:
   {
     'fruit': ['Banana', '2003', '$0.50']
   }
-}]
+]
 ```
 
 Your schema object would then look something like this:
@@ -175,6 +175,7 @@ If you just wished to get an array of the fruit names:
 
 ```javascript
 ['Apple', 'Orange', 'Banana']
+```
 
 Your schema object would then look something like this:
 
@@ -192,7 +193,7 @@ So this schema object
 
 ```javascript
 gk = new Gurkha('table#fruit > tbody > tr > td:nth-child(1)');
-``
+```
 
 would return the same as the previous example, that is
 
@@ -245,7 +246,13 @@ For example, in this schema object
 }
 ```
 
-The 'name' object member will be extracted using $('table#fruit > tbody > tr').find('td:nth-child(1)') (roughly equivalent to concatenating the selectors)
+The 'name' object member will be extracted using
+
+```javascript
+$('table#fruit > tbody > tr').find('td:nth-child(1)')
+```
+
+Which is equivalent to concatenating the selectors.
 
 This holds true to implicit rules, such as
 
@@ -256,23 +263,9 @@ This holds true to implicit rules, such as
 }
 ```
 
-Use of '$rule' is optional, but not using it at the top level of the schema object will result on a performance hit. The only exception to this is when you need to specify other options, since a selector is required for each object member.
+Use of '$rule' is optional, but not using it at the top level of the schema object will result on a performance hit.
 
-For example, this is an illegal schema object
-
-```javascript
-{
-  'name': {
-    '$fn': function ($elem) {
-      return elem.text().trim();
-    }
-  }
-}
-```
-
-since there is no selector for the 'name' attribute.
-
-On the other hand
+For example, this is a perfectly valid schema object:
 
 ```javascript
 {
@@ -280,15 +273,13 @@ On the other hand
 }
 ```
 
-is perfectly valid.
-
 ### Sanitizing function
 
 The '$fn' object member specifies a sanitizing function to be applied to the data retrieved by the selector specified in '$rule'. It always receives a cheerio object representing the selected element as a parameter and must return the sanitized value. This is useful if you wish to perform any operations on the data, like removing special characters, trimming or even to continue traversing the DOM and retrieve other values to perform mixed operations.
 
 For instance, a good use of '$fn' would be to remove the dollar signs on the price of the fruit, like in the first example.
 
-'$fn' can also be specified at the top level of the schema object. A top level '$fn' definition will only apply to single-rule object members, so if you have this schema object
+'$fn' will apply to the element selected by '$rule' only if the schema object of which it is a member has no unreserved object members. If there are unreserved members, '$fn' will apply only to those which do not have unreserved members themselves. In other words, it will only apply to single-rule schema objects within the schema object where it is defined, so if you have this schema object
 
 ```javascript
 gk = new Gurkha({
@@ -297,6 +288,13 @@ gk = new Gurkha({
     return $elem.text() + ' gurkha rocks!';
   },
   'name': 'td:nth-child(1)',
+  'name2': {
+    '$rule': 'td:nth-child(1)'
+  },
+  'name-price': [
+    'td:nth-child(1)',
+    'td:nth-child(2)'
+  ],
   'price-code': {
     'code': 'td:nth-child(2)',
     'price': 'td:nth-child(3)'
@@ -304,18 +302,24 @@ gk = new Gurkha({
 });
 ```
 
-the sanitizing function will not propagate to the inner members of 'price-code', but will apply to 'name', yielding the following result:
+the sanitizing function will not propagate to the inner members of 'price-code', but will apply to 'name', 'name2' and 'name-price', yielding the following result:
 
 ```javascript
 [ { name: 'Apple gurkha rocks!',
+    name2: 'Apple gurkha rocks!',
+    'name-price': [ 'Apple gurkha rocks!', '2001 gurkha rocks!' ],
     'price-code': { code: '2001', price: '$0.40' } },
   { name: 'Orange gurkha rocks!',
+    name2: 'Orange gurkha rocks!',
+    'name-price': [ 'Orange gurkha rocks!', '2002 gurkha rocks!' ],
     'price-code': { code: '2002', price: '$0.44' } },
   { name: 'Banana gurkha rocks!',
+    name2: 'Banana gurkha rocks!',
+    'name-price': [ 'Banana gurkha rocks!', '2003 gurkha rocks!' ],
     'price-code': { code: '2003', price: '$0.50' } } ]
 ```
 
-Moreover, inner sanitizing functions override outer ones on their scope.
+Moreover, inner sanitizing functions override outer ones in their scope.
 
 ### Top level selection
 
