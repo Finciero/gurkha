@@ -1,9 +1,6 @@
 'use strict';
 var cheerio = require('cheerio');
 
-// TODO: check to use each in every selection
-// TODO: fix parseArray
-
 function gurkha (schema) {
   if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
     throw new Error('Illegal argument: constructor must receive a schema object, string or array');
@@ -15,7 +12,8 @@ function gurkha (schema) {
 gurkha.prototype._reserved = {
   '$fn': true,
   '$rule': true,
-  '$topLevel': true
+  '$topLevel': true,
+  '$post': true
 };
 
 // traverses the schema recursively in order to build the object
@@ -59,6 +57,7 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
   var resultArray = [];
   // options
   var topLevel = sch.$topLevel;
+  var post = sch.$post;
   if (rule) {
     if (typeof(rule) !== 'string') {
       throw new Error('Illegal type: Rules must be in String format');
@@ -86,7 +85,16 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
     resultArray.push(_this._build($currentElement, sch, sanitizer));
   }
 
-  return resultArray;
+  // post-processing
+  if (post) {
+    if (typeof(post) !== 'function') {
+      throw new Error('Illegal type: Post-processing functions must be in function format');
+    } else {
+      return resultArray.map(post);
+    }
+  } else {
+    return resultArray;
+  }
 };
 
 gurkha.prototype._parseString = function ($currentElement, sch, sanitizer) {

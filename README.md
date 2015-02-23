@@ -369,6 +369,106 @@ gk = new Gurkha({
 });
 ```
 
+### Post-processing
+
+Sometimes you may want to perform some post-processing operations on your object before gurkha returns it. You may even want to perform them on one of the inner objects in your master object.
+
+Let's take our first example and say that you wish to add the word 'Premium' at the beginning of the name of any fruit with a price of more than $0.42. Normally, you'd have to wait until gurkha returns your object and then pass it to a function that does this operation. With '$post', you may simply declare a function and gurkha will pass the object to that function before it returns it.
+
+Your schema object would look something like this:
+
+```javascript
+var gk = new Gurkha({
+  '$rule': 'table#fruit > tbody > tr',
+  '$post': function (obj) {
+    if (obj.price > 0.42) {
+      obj.name = 'Premium ' + obj.name;
+    }
+
+    return obj;
+  },
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$fn': function ($elem) {
+      return $elem.text().replace(/\$/, '');
+    }
+  }
+});
+``
+
+And the result would be
+
+```javascript
+[{'name': 'Apple', 'code': '2001', 'price': '0.40'},
+ {'name': 'Premium Orange', 'code': '2002', 'price': '0.44'},
+ {'name': 'Premium Banana', 'code': '2003', 'price': '0.50'}]
+```
+
+It must be noted that post-processing functions must receive the object and return a value, so even if you just wish perform operations on the object members, you must return the object at the end.
+
+As you might expect, you can define post-processing functions for inner objects in your schema. For example, let's say you have this object structure
+
+```javascript
+{
+  'names': [
+    'Apple',
+    'Orange',
+    'Banana'
+  ],
+  'price-codes': [
+    {
+      'price': '$0.40',
+      'code': '2001'
+    },
+    {
+      'price': '$0.44',
+      'code': '2002'
+    },
+    {
+      'price': '$0.50',
+      'code': '2003'
+    }
+  ]
+}
+```
+
+but you wish to compress both price and code into a single value (i.e. '0.40-2001'). You can accomplish this with '$post' in the following way:
+
+```javascript
+gk = new Gurkha({
+  'names': 'table#fruit > tbody > tr > td:nth-child(1)',
+  'price-codes': {
+    '$rule': 'table#fruit > tbody > tr',
+    '$post': function (obj) {
+      return obj.price + '-' + obj.code;
+    },
+    'price': 'td:nth-child(3)',
+    'code': 'td:nth-child(2)'
+  }
+});
+```
+
+and the result would be
+
+```javascript
+{
+  'names': [
+    'Apple',
+    'Orange',
+    'Banana'
+  ],
+  'price-codes': [
+    '$0.40-2001',
+    '$0.44-2002',
+    '$0.50-2003'
+  ]
+}
+```
+
+Be mindful that post-processing functions apply over each element of the object array, so you cannot post-process the entire array.
+
 ## Contributing
 
 If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Any requests for features or bug fixes can be made by adding a new issue.
