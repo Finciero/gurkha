@@ -17,5 +17,6 @@
   "latedef": true,
   "newcap": true,
   "plusplus": true,
-  "globalstrict": true
+  "globalstrict": true,
+  "jasmine": true
 }

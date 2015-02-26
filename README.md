@@ -471,4 +471,4 @@ Be mindful that post-processing functions apply over each element of the object 
 
 ## Contributing
 
-If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Any requests for features or bug fixes can be made by adding a new issue.
+If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Please test your code before sending in a pull request. Feel free to write any tests you need to check new functionality you wish to add. All tests are written using [jasmine-node](https://github.com/mhevery/jasmine-node "jasmine-node"). Any requests for features or bug fixes can be made by adding a new issue.

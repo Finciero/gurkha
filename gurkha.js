@@ -2,7 +2,7 @@
 var cheerio = require('cheerio');
 
 function gurkha (schema) {
-  if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
+  if (typeof(schema) !== 'object' && typeof(schema) !== 'string' || !schema || schema === null) {
     throw new Error('Illegal argument: constructor must receive a schema object, string or array');
   }
 
@@ -21,7 +21,7 @@ gurkha.prototype._parse = function ($currentElement, sch, sanitizer) {
   var _this = this;
   if (sch instanceof Array) {
     return _this._parseArray($currentElement, sch, sanitizer);
-  } else if (typeof(sch) === 'object') {
+  } else if (typeof(sch) === 'object' && sch !== null) {
     return _this._parseObject($currentElement, sch, sanitizer);
   } else if (typeof(sch) === 'string') {
     return _this._parseString($currentElement, sch, sanitizer);
@@ -36,7 +36,7 @@ gurkha.prototype._parseArray = function ($currentElement, sch, sanitizer) {
   var resultArray = [];
   var i;
   if (!$currentElement) {
-    $currentElement = $('*');
+    $currentElement = $(_this.html);
   }
   for (i = 0; i < sch.length; i += 1) {
     var value = sch[i];
@@ -79,7 +79,7 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
   // no basic rule specified
   } else {
     if (!$currentElement || topLevel) {
-      $currentElement = $('*');
+      $currentElement = $(_this.html);
     }
     // if there is no rule we build only one object
     resultArray.push(_this._build($currentElement, sch, sanitizer));
@@ -132,7 +132,7 @@ gurkha.prototype._build = function ($el, sch, sanitizer) {
   sanitizer = sch.$fn || sanitizer;
   if (sanitizer) {
     if (typeof(sanitizer) !== 'function') {
-      throw new Error('Illegal type: Sanitizers must be in Function format');
+      throw new Error('Illegal type: Sanitizers must be in function format');
     }
   }
   for (var key in sch) {
@@ -208,6 +208,7 @@ gurkha.prototype._flatten2 = function (val) {
 };
 // exposed parsing function, wrapper for _parse
 gurkha.prototype.parse = function (html) {
+  this.html = html;
   this.$ = cheerio.load(html);
   return this._flatten(this._parse(null, this._schema));
 };
