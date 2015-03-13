@@ -1,12 +1,13 @@
 'use strict';
 var cheerio = require('cheerio');
 
-function gurkha (schema) {
+function gurkha (schema, options) {
   if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
     throw new Error('Illegal argument: constructor must receive a schema object, string or array');
   }
 
   this._schema = schema;
+  this._options = options;
 }
 // reserved object members
 gurkha.prototype._reserved = {
@@ -208,7 +209,7 @@ gurkha.prototype._flatten2 = function (val) {
 };
 // exposed parsing function, wrapper for _parse
 gurkha.prototype.parse = function (html) {
-  this.$ = cheerio.load(html);
+  this.$ = cheerio.load(html, this._options);
   return this._flatten(this._parse(null, this._schema));
 };
 
