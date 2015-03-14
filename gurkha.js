@@ -6,6 +6,10 @@ function gurkha (schema, options) {
     throw new Error('Illegal argument: constructor must receive a schema object, string or array');
   }
 
+  if (options !== undefined && typeof(schema) !== 'object') {
+    throw new Error('Illegal argument: if options are present must be an object.');
+  }
+
   this._schema = schema;
   this._options = options;
 }
