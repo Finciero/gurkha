@@ -80,6 +80,19 @@ console.log(products[0].name);
 
 gurkha automatically detects whether the selection returns multiple elements and in that case, the value of that object member will be an array.
 
+You can also pass an extra object to Gurkha constructor if you need to modify any of the default parsing options.
+
+These parsing options are taken directly from [htmlparser2](https://github.com/fb55/htmlparser2/wiki/Parser-options), therefore any options that can be used in `htmlparser2` are valid in cheerio as well. The default options are:
+
+```js
+{
+    normalizeWhitespace: false,
+    xmlMode: false,
+    decodeEntities: true
+}
+
+```
+
 The result of a .parse() call will always be an array.
 
 ## Smart Parsing
