@@ -11,7 +11,7 @@ function gurkha (schema, options) {
   }
 
   this._schema = schema;
-  this._options = options;
+  this._options = options || {};
 }
 // reserved object members
 gurkha.prototype._reserved = {
