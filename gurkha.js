@@ -2,12 +2,13 @@
 var cheerio = require('cheerio');
 
 function gurkha (schema, options) {
+  /*jshint validthis: true */
   if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
     throw new Error('Illegal argument: constructor must receive a schema' +
                     'object, string or array');
   }
 
-  if (options !== undefined && typeof(schema) !== 'object') {
+  if (options !== undefined && typeof(options) !== 'object') {
     throw new Error('Illegal argument: if options are present must ' +
                     'be an object.');
   }
