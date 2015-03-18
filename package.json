@@ -1,6 +1,6 @@
 {
   "name": "gurkha",
-  "version": "0.3.1",
+  "version": "1.0.0",
   "description": "Data extraction module",
   "main": "gurkha.js",
   "scripts": {
