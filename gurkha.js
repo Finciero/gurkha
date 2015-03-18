@@ -18,7 +18,7 @@ function gurkha (schema, options) {
 }
 // reserved object members
 gurkha.prototype._reserved = {
-  '$fn': true,
+  '$sanitizer': true,
   '$rule': true,
   '$topLevel': true,
   '$post': true
@@ -137,7 +137,7 @@ gurkha.prototype._build = function ($el, sch, sanitizer) {
   var result = {};
   var keyCount = 0;
   // override the previous sanitizer if a new one exists in the object
-  sanitizer = sch.$fn || sanitizer;
+  sanitizer = sch.$sanitizer || sanitizer;
   if (sanitizer) {
     if (typeof(sanitizer) !== 'function') {
       throw new Error('Illegal type: Sanitizers must be in Function format');
@@ -151,7 +151,7 @@ gurkha.prototype._build = function ($el, sch, sanitizer) {
       keyCount += 1;
       value = sch[key];
       // unreserved object members must ignore previous sanitizer functions
-      result[key] = _this._parse($el, value, sch.$fn);
+      result[key] = _this._parse($el, value, sch.$sanitizer);
     }
   }
   // if the object has no members other than the reserved ones,

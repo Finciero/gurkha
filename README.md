@@ -66,7 +66,7 @@ var gk = new Gurkha({
   'code': 'td:nth-child(2)',
   'price': {
     '$rule': 'td:nth-child(3)',
-    '$fn': function ($elem) {
+    '$sanitizer': function ($elem) {
       return $elem.text().replace(/\$/, '');
     }
   }
@@ -288,16 +288,16 @@ For example, this is a perfectly valid schema object:
 
 ### Sanitizing function
 
-The '$fn' object member specifies a sanitizing function to be applied to the data retrieved by the selector specified in '$rule'. It always receives a cheerio object representing the selected element as a parameter and must return the sanitized value. This is useful if you wish to perform any operations on the data, like removing special characters, trimming or even to continue traversing the DOM and retrieve other values to perform mixed operations.
+The '$sanitizer' object member specifies a sanitizing function to be applied to the data retrieved by the selector specified in '$rule'. It always receives a cheerio object representing the selected element as a parameter and must return the sanitized value. This is useful if you wish to perform any operations on the data, like removing special characters, trimming or even to continue traversing the DOM and retrieve other values to perform mixed operations.
 
-For instance, a good use of '$fn' would be to remove the dollar signs on the price of the fruit, like in the first example.
+For instance, a good use of '$sanitizer' would be to remove the dollar signs on the price of the fruit, like in the first example.
 
-'$fn' will apply to the element selected by '$rule' only if the schema object of which it is a member has no unreserved object members. If there are unreserved members, '$fn' will apply only to those which do not have unreserved members themselves. In other words, it will only apply to single-rule schema objects within the schema object where it is defined, so if you have this schema object
+'$sanitizer' will apply to the element selected by '$rule' only if the schema object of which it is a member has no unreserved object members. If there are unreserved members, '$sanitizer' will apply only to those which do not have unreserved members themselves. In other words, it will only apply to single-rule schema objects within the schema object where it is defined, so if you have this schema object
 
 ```javascript
 gk = new Gurkha({
   '$rule': 'table#fruit > tbody > tr',
-  '$fn': function ($elem) {
+  '$sanitizer': function ($elem) {
     return $elem.text() + ' gurkha rocks!';
   },
   'name': 'td:nth-child(1)',
@@ -368,14 +368,14 @@ gk = new Gurkha({
   'code': 'td:nth-child(2)',
   'price': {
     '$rule': 'td:nth-child(3)',
-    '$fn': function ($elem) {
+    '$sanitizer': function ($elem) {
       return $elem.text().replace(/\$/, '');
     }
   },
   'link': {
     '$rule': 'a',
     '$topLevel': true,
-    '$fn': function ($elem) {
+    '$sanitizer': function ($elem) {
       return $elem.attr('href');
     }
   }
@@ -404,7 +404,7 @@ var gk = new Gurkha({
   'code': 'td:nth-child(2)',
   'price': {
     '$rule': 'td:nth-child(3)',
-    '$fn': function ($elem) {
+    '$sanitizer': function ($elem) {
       return $elem.text().replace(/\$/, '');
     }
   }
