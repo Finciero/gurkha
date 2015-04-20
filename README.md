@@ -419,7 +419,7 @@ And the result would be
  {'name': 'Premium Banana', 'code': '2003', 'price': '0.50'}]
 ```
 
-It must be noted that post-processing functions must receive the object and return a value, so even if you just wish perform operations on the object members, you must return the object at the end.
+It must be noted that post-processing functions must receive the object and return a value, so even if you just wish to perform operations on the object members, you must return the object at the end.
 
 As you might expect, you can define post-processing functions for inner objects in your schema. For example, let's say you have this object structure
 
@@ -479,6 +479,46 @@ and the result would be
   ]
 }
 ```
+
+You can also pass an array of external variables to the gurkha constructor, which can be then accessed by every post-processing function in your schema object. Let's say for example that you already parsed some crucial information, stored it in an array called 'crucialInfo' and you now need to parse a new object with gurkha with said information in its properties.
+
+Let's say 'crucialInfo' looks like this:
+
+```javascript
+['veryImportantString', 'notSoImportantButStillImportantString']
+```
+
+And the new object you wish to parse would look like this:
+
+```javascript
+[{'name': 'Apple', 'code': '2001', 'price': '0.40', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'},
+ {'name': 'Orange', 'code': '2002', 'price': '0.44', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'},
+ {'name': 'Banana', 'code': '2003', 'price': '0.50', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'}]
+```
+
+You could of course manually add the information after parsing, but there's a better way: You can pass 'crucialInfo' to the gurkha constructor and use post-processing functions to manipulate the data like so:
+
+```javascript
+var gk = new Gurkha({
+  '$rule': 'table#fruit > tbody > tr',
+  '$post': function (obj, externalVars) {
+    obj.vis = externalVars[0];
+    obj.nsibsis = externalVars[1];
+
+    return obj;
+  }
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$sanitizer': function ($elem) {
+      return $elem.text().replace(/\$/, '');
+    }
+  }
+}, crucialInfo);
+```
+
+The array of external variables is passed to every post-processing function in the schema object.
 
 Be mindful that post-processing functions apply over each element of the object array, so you cannot post-process the entire array.
 
