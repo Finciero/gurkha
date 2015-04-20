@@ -123,7 +123,7 @@ Following the previous example, let's say you wish to create a different structu
 }]
 ```
 
-Your schema object then would look something like this:
+Your schema object would then look something like this:
 
 ```javascript
 var gk = new Gurkha({
@@ -228,7 +228,7 @@ gurkha has a bunch of reserved keywords in the schema object to help you build y
 
 The '$rule' object member specifies the CSS selector that will retrieve the element in question. If absent, the selection will begin at the top level of the DOM.
 
-When an member of the schema object has a string for a value, the string value is implicitly bound to '$rule'.
+When a member of the schema object has a string for a value, the string value is implicitly bound to '$rule'.
 
 ```javascript
 {
@@ -254,7 +254,7 @@ For example, in this schema object
 {
   '$rule': 'table#fruit > tbody > tr',
   'name': {
-    '$rule': 'td:nth-child(1)',
+    '$rule': 'td:nth-child(1)'
   }
 }
 ```
@@ -306,7 +306,7 @@ gk = new Gurkha({
   },
   'name-price': [
     'td:nth-child(1)',
-    'td:nth-child(2)'
+    'td:nth-child(3)'
   ],
   'price-code': {
     'code': 'td:nth-child(2)',
@@ -320,15 +320,15 @@ the sanitizing function will not propagate to the inner members of 'price-code',
 ```javascript
 [ { name: 'Apple gurkha rocks!',
     name2: 'Apple gurkha rocks!',
-    'name-price': [ 'Apple gurkha rocks!', '2001 gurkha rocks!' ],
+    'name-price': [ 'Apple gurkha rocks!', '$0.40 gurkha rocks!' ],
     'price-code': { code: '2001', price: '$0.40' } },
   { name: 'Orange gurkha rocks!',
     name2: 'Orange gurkha rocks!',
-    'name-price': [ 'Orange gurkha rocks!', '2002 gurkha rocks!' ],
+    'name-price': [ 'Orange gurkha rocks!', '$0.44 gurkha rocks!' ],
     'price-code': { code: '2002', price: '$0.44' } },
   { name: 'Banana gurkha rocks!',
     name2: 'Banana gurkha rocks!',
-    'name-price': [ 'Banana gurkha rocks!', '2003 gurkha rocks!' ],
+    'name-price': [ 'Banana gurkha rocks!', '$0.50 gurkha rocks!' ],
     'price-code': { code: '2003', price: '$0.50' } } ]
 ```
 
@@ -524,4 +524,4 @@ Be mindful that post-processing functions apply over each element of the object 
 
 ## Contributing
 
-If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Any requests for features or bug fixes can be made by adding a new issue.
+If you wish to contribute to this module, feel free to branch out from the development branch, I'll be glad to go over your contributions and add them if they're reasonable. Please test your code before sending in a pull request. Feel free to write any tests you need to check new functionality you wish to add. All tests are written using [jasmine-node](https://github.com/mhevery/jasmine-node "jasmine-node"). Any requests for features or bug fixes can be made by adding a new issue.
