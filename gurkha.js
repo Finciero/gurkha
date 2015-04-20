@@ -1,20 +1,29 @@
 'use strict';
 var cheerio = require('cheerio');
 
-function gurkha (schema, options) {
+function gurkha (schema, options, extvars) {
   /*jshint validthis: true */
   if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
     throw new Error('Illegal argument: constructor must receive a schema' +
                     'object, string or array');
   }
 
-  if (options !== undefined && typeof(options) !== 'object') {
-    throw new Error('Illegal argument: if options are present must ' +
-                    'be an object.');
+  if (options !== undefined) {
+    if (options instanceof Array) {
+      extvars = options;
+      options = undefined;
+    } else if (typeof(options) !== 'object') {
+      throw new Error('Illegal argument: if options are present, they must be an object.');
+    }
+  }
+
+  if (extvars !== undefined && !(extvars instanceof Array)) {
+    throw new Error('Illegal argument: if external variables are present, they must be an array');
   }
 
   this._schema = schema;
   this._options = options || {};
+  this._extvars = extvars || [];
 }
 // reserved object members
 gurkha.prototype._reserved = {
@@ -98,7 +107,9 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
     if (typeof(post) !== 'function') {
       throw new Error('Illegal type: Post-processing functions must be in function format');
     } else {
-      return resultArray.map(post);
+      return resultArray.map(function (result) {
+        return post(result, _this._extvars);
+      });
     }
   } else {
     return resultArray;
