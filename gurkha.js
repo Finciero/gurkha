@@ -108,7 +108,8 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
       throw new Error('Illegal type: Post-processing functions must be in function format');
     } else {
       return resultArray.map(function (result) {
-        return post(result, _this._extvars);
+        // we must flatten the object in order for the post-processing function to work properly
+        return post(_this._flatten2(result), _this._extvars);
       });
     }
   } else {
