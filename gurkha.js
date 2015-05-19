@@ -78,7 +78,7 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
   var constant = sch.$constant;
 
   // ignore everything else in the object if a constant is specified
-  if (constant) {
+  if (constant !== undefined) {
     return [constant];
   }
 
