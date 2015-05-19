@@ -79,55 +79,55 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
 
   // ignore everything else in the object if a constant is specified
   if (constant) {
-    return constant;
+    return [constant];
+  }
+
+  if (rule) {
+    if (typeof (rule) !== 'string') {
+      throw new Error('Illegal type: Rules must be in String format');
+    }
+    // $currentElement is null if the schema object is not nested, meaning the rule should select from the entire DOM
+    // topLevel indicates that the rule should select from the entire DOM,
+    // ignoring any previous rules in outer schema objects
+    if (!$currentElement || topLevel) {
+      $currentElement = $(rule);
+    } else {
+      $currentElement = $($currentElement).find(rule);
+    }
+
+    // build object for each element selected by the rule
+    $currentElement.each(function (index, el) {
+      var $el = $(el);
+      // only build the object if the element doesn't meet the schema's ignore criteria
+      if (typeof (ignore) !== 'function') {
+        throw new Error('Illegal type: Filters must be in function format');
+      }
+
+      if (!ignore($el, _this._extvars)) {
+        resultArray.push(_this._build($el, sch, sanitizer));
+      }
+    });
+  // no basic rule specified
   } else {
-    if (rule) {
-      if (typeof (rule) !== 'string') {
-        throw new Error('Illegal type: Rules must be in String format');
-      }
-      // $currentElement is null if the schema object is not nested, meaning the rule should select from the entire DOM
-      // topLevel indicates that the rule should select from the entire DOM,
-      // ignoring any previous rules in outer schema objects
-      if (!$currentElement || topLevel) {
-        $currentElement = $(rule);
-      } else {
-        $currentElement = $($currentElement).find(rule);
-      }
+    if (!$currentElement || topLevel) {
+      $currentElement = $(_this._html);
+    }
+    // if there is no rule we build only one object
+    resultArray.push(_this._build($currentElement, sch, sanitizer));
+  }
 
-      // build object for each element selected by the rule
-      $currentElement.each(function (index, el) {
-        var $el = $(el);
-        // only build the object if the element doesn't meet the schema's ignore criteria
-        if (typeof (ignore) !== 'function') {
-          throw new Error('Illegal type: Filters must be in function format');
-        }
-
-        if (!ignore($el, _this._extvars)) {
-          resultArray.push(_this._build($el, sch, sanitizer));
-        }
+  // post-processing
+  if (post) {
+    if (typeof (post) !== 'function') {
+      throw new Error('Illegal type: Post-processing functions must be in function format');
+    } else {
+      return resultArray.map(function (result) {
+        // we must flatten the object in order for the post-processing function to work properly
+        return post(_this._flatten2(result), _this._extvars);
       });
-    // no basic rule specified
-    } else {
-      if (!$currentElement || topLevel) {
-        $currentElement = $(_this._html);
-      }
-      // if there is no rule we build only one object
-      resultArray.push(_this._build($currentElement, sch, sanitizer));
     }
-
-    // post-processing
-    if (post) {
-      if (typeof (post) !== 'function') {
-        throw new Error('Illegal type: Post-processing functions must be in function format');
-      } else {
-        return resultArray.map(function (result) {
-          // we must flatten the object in order for the post-processing function to work properly
-          return post(_this._flatten2(result), _this._extvars);
-        });
-      }
-    } else {
-      return resultArray;
-    }
+  } else {
+    return resultArray;
   }
 };
 
