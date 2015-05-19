@@ -1,36 +1,35 @@
 'use strict';
 var cheerio = require('cheerio');
 
-function gurkha (schema, options, extvars) {
+function gurkha (schema, options) {
   /*jshint validthis: true */
-  if (typeof(schema) !== 'object' && typeof(schema) !== 'string') {
+  var cheerioOpts, externalVars;
+  if (typeof (schema) !== 'object' && typeof (schema) !== 'string') {
     throw new Error('Illegal argument: constructor must receive a schema' +
                     'object, string or array');
   }
 
   if (options !== undefined) {
-    if (options instanceof Array) {
-      extvars = options;
-      options = undefined;
-    } else if (typeof(options) !== 'object') {
+    if (typeof (options) !== 'object') {
       throw new Error('Illegal argument: if options are present, they must be an object.');
     }
-  }
 
-  if (extvars !== undefined && !(extvars instanceof Array)) {
-    throw new Error('Illegal argument: if external variables are present, they must be an array');
+    cheerioOpts = options.options;
+    externalVars = options.params;
   }
 
   this._schema = schema;
-  this._options = options || {};
-  this._extvars = extvars || [];
+  this._options = cheerioOpts || {};
+  this._extvars = externalVars || {};
 }
 // reserved object members
 gurkha.prototype._reserved = {
   '$sanitizer': true,
   '$rule': true,
   '$topLevel': true,
-  '$post': true
+  '$post': true,
+  '$ignore': true,
+  '$constant': true
 };
 
 // traverses the schema recursively in order to build the object
@@ -38,9 +37,9 @@ gurkha.prototype._parse = function ($currentElement, sch, sanitizer) {
   var _this = this;
   if (sch instanceof Array) {
     return _this._parseArray($currentElement, sch, sanitizer);
-  } else if (typeof(sch) === 'object' && sch !== null) {
+  } else if (typeof (sch) === 'object' && sch !== null) {
     return _this._parseObject($currentElement, sch, sanitizer);
-  } else if (typeof(sch) === 'string') {
+  } else if (typeof (sch) === 'string') {
     return _this._parseString($currentElement, sch, sanitizer);
   } else {
     throw new Error('Illegal argument: schema values must be object, string or array. Got ' + sch);
@@ -75,45 +74,60 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
   // options
   var topLevel = sch.$topLevel;
   var post = sch.$post;
-  if (rule) {
-    if (typeof(rule) !== 'string') {
-      throw new Error('Illegal type: Rules must be in String format');
-    }
-    // $currentElement is null if the schema object is not nested, meaning the rule should select from the entire DOM
-    // topLevel indicates that the rule should select from the entire DOM,
-    // ignoring any previous rules in outer schema objects
-    if (!$currentElement || topLevel) {
-      $currentElement = $(rule);
-    } else {
-      $currentElement = $($currentElement).find(rule);
-    }
+  var ignore = sch.$ignore || function () { return false; };
+  var constant = sch.$constant;
 
-    // build object for each element selected by the rule
-    $currentElement.each(function (index, el) {
-      var $el = $(el);
-      resultArray.push(_this._build($el, sch, sanitizer));
-    });
-  // no basic rule specified
+  // ignore everything else in the object if a constant is specified
+  if (constant) {
+    return constant;
   } else {
-    if (!$currentElement || topLevel) {
-      $currentElement = $(_this._html);
-    }
-    // if there is no rule we build only one object
-    resultArray.push(_this._build($currentElement, sch, sanitizer));
-  }
+    if (rule) {
+      if (typeof (rule) !== 'string') {
+        throw new Error('Illegal type: Rules must be in String format');
+      }
+      // $currentElement is null if the schema object is not nested, meaning the rule should select from the entire DOM
+      // topLevel indicates that the rule should select from the entire DOM,
+      // ignoring any previous rules in outer schema objects
+      if (!$currentElement || topLevel) {
+        $currentElement = $(rule);
+      } else {
+        $currentElement = $($currentElement).find(rule);
+      }
 
-  // post-processing
-  if (post) {
-    if (typeof(post) !== 'function') {
-      throw new Error('Illegal type: Post-processing functions must be in function format');
-    } else {
-      return resultArray.map(function (result) {
-        // we must flatten the object in order for the post-processing function to work properly
-        return post(_this._flatten2(result), _this._extvars);
+      // build object for each element selected by the rule
+      $currentElement.each(function (index, el) {
+        var $el = $(el);
+        // only build the object if the element doesn't meet the schema's ignore criteria
+        if (typeof (ignore) !== 'function') {
+          throw new Error('Illegal type: Filters must be in function format');
+        }
+
+        if (!ignore($el)) {
+          resultArray.push(_this._build($el, sch, sanitizer));
+        }
       });
+    // no basic rule specified
+    } else {
+      if (!$currentElement || topLevel) {
+        $currentElement = $(_this._html);
+      }
+      // if there is no rule we build only one object
+      resultArray.push(_this._build($currentElement, sch, sanitizer));
     }
-  } else {
-    return resultArray;
+
+    // post-processing
+    if (post) {
+      if (typeof (post) !== 'function') {
+        throw new Error('Illegal type: Post-processing functions must be in function format');
+      } else {
+        return resultArray.map(function (result) {
+          // we must flatten the object in order for the post-processing function to work properly
+          return post(_this._flatten2(result), _this._extvars);
+        });
+      }
+    } else {
+      return resultArray;
+    }
   }
 };
 
@@ -151,7 +165,7 @@ gurkha.prototype._build = function ($el, sch, sanitizer) {
   // override the previous sanitizer if a new one exists in the object
   sanitizer = sch.$sanitizer || sanitizer;
   if (sanitizer) {
-    if (typeof(sanitizer) !== 'function') {
+    if (typeof (sanitizer) !== 'function') {
       throw new Error('Illegal type: Sanitizers must be in function format');
     }
   }
@@ -211,7 +225,7 @@ gurkha.prototype._flatten2 = function (val) {
   } else {
     var result = {};
     // flatten recursively
-    if (typeof(val) === 'object') {
+    if (typeof (val) === 'object') {
       for (var key in val) {
         if (!key) {
           continue;
@@ -227,9 +241,15 @@ gurkha.prototype._flatten2 = function (val) {
   }
 };
 // exposed parsing function, wrapper for _parse
-gurkha.prototype.parse = function (html) {
+gurkha.prototype.parse = function (html, params) {
   this._$ = cheerio.load(html, this._options);
   this._html = html;
+
+  // override parameters
+  if (params) {
+    this._extvars = params;
+  }
+
   return this._flatten(this._parse(null, this._schema));
 };
 
