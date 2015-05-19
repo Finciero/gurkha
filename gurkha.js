@@ -102,7 +102,7 @@ gurkha.prototype._parseObject = function ($currentElement, sch, sanitizer) {
           throw new Error('Illegal type: Filters must be in function format');
         }
 
-        if (!ignore($el)) {
+        if (!ignore($el, _this._extvars)) {
           resultArray.push(_this._build($el, sch, sanitizer));
         }
       });
@@ -149,7 +149,7 @@ gurkha.prototype._parseString = function ($currentElement, sch, sanitizer) {
     if (!sanitizer) {
       resultArray.push($el.text());
     } else {
-      resultArray.push(sanitizer($el));
+      resultArray.push(sanitizer($el, _this._extvars));
     }
   });
 
@@ -184,7 +184,7 @@ gurkha.prototype._build = function ($el, sch, sanitizer) {
   // return the result of the selection rather than an object
   if (keyCount === 0) {
     if (sanitizer) {
-      return sanitizer($el);
+      return sanitizer($el, _this._extvars);
     } else {
       return $el.text();
     }
