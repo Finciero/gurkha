@@ -80,11 +80,22 @@ console.log(products[0].name);
 
 gurkha automatically detects whether the selection returns multiple elements and in that case, the value of that object member will be an array.
 
-You can also pass an extra object to the Gurkha constructor if you need to modify any of the default parsing options.
+You can also pass an extra object to the Gurkha constructor if you need to modify any of the default parsing options and/or pass extra parameters to be used in the schema's functions. We will look into parameters in depth in another section. The syntax for the options object is the following:
+
+```javascript
+{
+  'options': {
+    // parsing options
+  },
+  'params': {
+    // parameters
+  }
+}
+```
 
 These parsing options are taken directly from [htmlparser2](https://github.com/fb55/htmlparser2/wiki/Parser-options), therefore any options that can be used in `htmlparser2` are valid in cheerio as well. The default options are:
 
-```js
+```javascript
 {
     normalizeWhitespace: false,
     xmlMode: false,
@@ -480,33 +491,15 @@ and the result would be
 }
 ```
 
-You can also pass an array of external variables to the gurkha constructor, which can be then accessed by every post-processing function in your schema object. Let's say for example that you already parsed some crucial information, stored it in an array called 'crucialInfo' and you now need to parse a new object with gurkha with said information in its properties.
+Be mindful that post-processing functions apply over each element of the object array, so you cannot post-process the entire array.
 
-Let's say 'crucialInfo' looks like this:
+### Filters
 
-```javascript
-['veryImportantString', 'notSoImportantButStillImportantString']
-```
-
-And the new object you wish to parse would look like this:
-
-```javascript
-[{'name': 'Apple', 'code': '2001', 'price': '0.40', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'},
- {'name': 'Orange', 'code': '2002', 'price': '0.44', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'},
- {'name': 'Banana', 'code': '2003', 'price': '0.50', vis: 'veryImportantString', nsibsis: 'notSoImportantButStillImportantString'}]
-```
-
-You could of course manually add the information after parsing, but there's a better way: You can pass 'crucialInfo' to the gurkha constructor and use post-processing functions to manipulate the data like so:
+Let's say you want gurkha to ignore any rows with the word 'Apple' in them. You could use the :nth-child pseudo selector, but there is a better way. Gurkha now supports filtering functions. A filtering function is a simple function which receives a cheerio object as an argument and returns true if that element should be filtered out. For instance, for this particular example, your schema object would look like this:
 
 ```javascript
 var gk = new Gurkha({
   '$rule': 'table#fruit > tbody > tr',
-  '$post': function (obj, externalVars) {
-    obj.vis = externalVars[0];
-    obj.nsibsis = externalVars[1];
-
-    return obj;
-  }
   'name': 'td:nth-child(1)',
   'code': 'td:nth-child(2)',
   'price': {
@@ -514,13 +507,143 @@ var gk = new Gurkha({
     '$sanitizer': function ($elem) {
       return $elem.text().replace(/\$/, '');
     }
-  }
-}, crucialInfo);
+  },
+  '$ignore: function ($elem) {
+    return $elem.text().indexOf('Apple') > -1;
+  }'
+});
 ```
 
-The array of external variables is passed to every post-processing function in the schema object.
+and the result would of course be:
 
-Be mindful that post-processing functions apply over each element of the object array, so you cannot post-process the entire array.
+```javascript
+[{'name': 'Orange', 'code': '2002', 'price': '0.44'},
+ {'name': 'Banana', 'code': '2003', 'price': '0.50'}]
+```
+
+### Constants
+
+Sometimes not all of your desired object members are obtained via parsing. Sometimes you want your parsed object to contain some constant values. Let's say you wish to add a setter method for the ever fluctuating prices of fruit. You could always simply add it to the object with a post-processing function, or a sanitizer function that returns said function, but there is an easier and more readable way. Enter the 'constant' option:
+
+```javascript
+var gk = new Gurkha({
+  '$rule': 'table#fruit > tbody > tr',
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$sanitizer': function ($elem) {
+      return $elem.text().replace(/\$/, '');
+    }
+  },
+  'setPrice': {
+    '$constant': function (val) {
+      this.price = val;
+    }
+  }
+});
+```
+
+By using the 'constant' option, you are specifying that any preceding rules are to be ignored and that the result of parsing with that schema object will be whichever value its '$constant' member has. Be mindful that if '$constant' is set, any other options on that schema object are ignored, including post-processing functions.
+
+## Parameters
+
+As it was mentioned in the introduction, you can pass parameters to the gurkha constructor along with the parsing options. These parameters are meant to be used by the sanitizer, filter and post-processing functions. Here are a couple of use cases that will illustrate how you can use parameters to your benefit.
+
+Let's take the first example and say you wish to convert the price to another currency, but the specific currency conversion rate you wish to use is dynamic. You could of course define the schema within the scope of your currency conversion variable, but there is a better, more readable way.
+
+First, you set up your schema like so:
+
+```javascript
+var mySchema = {
+  '$rule': 'table#fruit > tbody > tr',
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$sanitizer': function ($elem, params) {
+      return $elem.text().replace(/\$/, '') * params.conversionRate;
+    }
+  }
+};
+```
+
+And then you simply pass the gurkha constructor an options object which contains your conversion rate as a parameter, like this:
+
+```javascript
+var gk = new Gurkha(mySchema,
+{
+  'params': {
+    'conversionRate': someRate // defined elsewhere
+  }
+});
+```
+
+The params object will be passed to every sanitizing function in the schema object, no matter how nested it is.
+
+In another example, let's say you now wish to keep the original price but add a function to your object that logs out the converted price to the console. You could achieve this with parameters and the post-processing function.
+
+This is how the constructor call would look like:
+
+```javascript
+var gk = new Gurkha({
+  '$rule': 'table#fruit > tbody > tr',
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$sanitizer': function ($elem) {
+      return $elem.text().replace(/\$/, '');
+    }
+  },
+  '$post': function (obj, params) {
+    obj.printConvertedPrice = function () {
+      console.log(this.price * params.conversionRate);
+    };
+
+    return obj;
+  }
+},
+{
+  'params': {
+    'conversionRate': someRate // defined elsewhere
+  }
+});
+```
+
+As with the sanitizers, the params object is also passed to every post-processing function in the schema object.
+
+Finally, let's say you wish to filter out all rows that contain a certain string of text, but this text is also dynamic.
+
+This is how the constructor call would look like:
+
+```javascript
+var gk = new Gurkha({
+  '$rule': 'table#fruit > tbody > tr',
+  'name': 'td:nth-child(1)',
+  'code': 'td:nth-child(2)',
+  'price': {
+    '$rule': 'td:nth-child(3)',
+    '$sanitizer': function ($elem) {
+      return $elem.text().replace(/\$/, '');
+    }
+  },
+  '$ignore': function ($elem, params) {
+    return $elem.text().indexOf(params.forbiddenText) > -1;
+  }
+},
+{
+  'params': {
+    'forbiddenText': someText // defined elsewhere
+  }
+});
+```
+
+As before, the params object is passed to every filtering function in the schema object.
+
+Since you can only pass a single params object to the gurkha constructor, it is shared among all functions in the schema. This allows you to mix-and-match.
+
+As a final note, parameters passed to the constructor can be overriden by passing a new params object to a .parse() call.
 
 ## Contributing
 
