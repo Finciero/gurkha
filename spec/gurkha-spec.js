@@ -1,6 +1,9 @@
 // Unit tests
-'use strict';
-var Gurkha = require('../gurkha');
+
+import 'babel-polyfill'
+import Gurkha from '../src/gurkha'
+import expect from 'expect'
+
 describe('gurkha', function () {
   describe('#parse', function () {
     var gk;
@@ -192,7 +195,7 @@ describe('gurkha', function () {
     it('should parse an object with a single rule and sanitizing function', function () {
       gk = new Gurkha({
         '$rule': 'table#fruit > tbody > tr > td:nth-child(3)',
-        '$fn': function ($elem) {
+        '$sanitizer': function ($elem) {
           return $elem.text().trim().replace(/\$/g, '');
         }
       });
@@ -203,7 +206,7 @@ describe('gurkha', function () {
 
       gk = new Gurkha({
         '$rule': 'a',
-        '$fn': function ($elem) {
+        '$sanitizer': function ($elem) {
           return $elem.attr('href');
         }
       });
@@ -216,7 +219,7 @@ describe('gurkha', function () {
     it('should parse an object applying a sanitizing function to single-rule unreserved members', function () {
       gk = new Gurkha({
         '$rule': 'table#fruit > tbody > tr',
-        '$fn': function (elem) {
+        '$sanitizer': function (elem) {
           return elem.text() + ' test';
         },
         'name': 'td:nth-child(1)',
@@ -281,7 +284,7 @@ describe('gurkha', function () {
     it('should mind not to propagate sanitizing functions into inner objects with unreserved members', function () {
       gk = new Gurkha({
         '$rule': 'table#fruit > tbody > tr',
-        '$fn': function ($elem) {
+        '$sanitizer': function ($elem) {
           return $elem.text() + ' gurkha rocks!';
         },
         'name': 'td:nth-child(1)',
@@ -325,12 +328,12 @@ describe('gurkha', function () {
     it('should override sanitizing functions', function () {
       gk = new Gurkha({
         '$rule': 'table#fruit > tbody > tr',
-        '$fn': function ($elem) {
+        '$sanitizer': function ($elem) {
           return $elem.text() + ' this shouldn\'t be here';
         },
         'name': {
           '$rule': 'td:nth-child(1)',
-          '$fn': function ($elem) {
+          '$sanitizer': function ($elem) {
             return $elem.text() + ' this should be here';
           }
         }
@@ -413,10 +416,10 @@ describe('gurkha', function () {
 
       expect(function () {
         gk = new Gurkha({
-          'name': function () {}
+          'name': () => {}
         });
         gk.parse(html);
-      }).toThrow('Illegal argument: schema values must be object, string or array. Got function () {}');
+      }).toThrow('Illegal argument: schema values must be object, string or array. Got function name() {}');
     });
 
     it('should throw an exception if a rule is not in string format', function () {
@@ -456,7 +459,7 @@ describe('gurkha', function () {
     it('should throw an exception if a sanitizing function is not in function format', function () {
       expect(function () {
         gk = new Gurkha({
-          '$fn': 1
+          '$sanitizer': 1
         });
 
         gk.parse(html);
@@ -464,7 +467,7 @@ describe('gurkha', function () {
 
       expect(function () {
         gk = new Gurkha({
-          '$fn': true
+          '$sanitizer': true
         });
 
         gk.parse(html);
@@ -472,7 +475,7 @@ describe('gurkha', function () {
 
       expect(function () {
         gk = new Gurkha({
-          '$fn': []
+          '$sanitizer': []
         });
 
         gk.parse(html);
@@ -480,7 +483,7 @@ describe('gurkha', function () {
 
       expect(function () {
         gk = new Gurkha({
-          '$fn': {}
+          '$sanitizer': {}
         });
 
         gk.parse(html);
